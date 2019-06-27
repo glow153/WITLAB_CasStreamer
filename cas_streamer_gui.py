@@ -1,7 +1,7 @@
 import sys
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QLabel, QHBoxLayout,
+from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QWidget, QMainWindow, QLineEdit, QPushButton)
 
 from cas_streamer import CasEntryStreamer
@@ -12,66 +12,78 @@ class CasStreamerFrame(QMainWindow):
     def __init__(self, title):
         super(CasStreamerFrame, self).__init__()
         self.title = title
+        self.streamer = CasEntryStreamer()
+        self.tag = CasStreamerFrame.__class__.__name__
 
         # create widgets
-        self.layout = QHBoxLayout()
+        self.layout1 = QHBoxLayout()
+        self.layout2 = QHBoxLayout()
+        self.main_layout = QVBoxLayout()
         self.lbl = QLabel('스트리밍 대상 디렉토리')
         self.ledt = QLineEdit()
+        self.lbl_state = QLabel('스트리밍 상태: 멈춤')
         self.btn = QPushButton('시작')
         self.widget = QWidget()
 
         self.setupUi()
         self.createActions()
 
-        self.is_streaming = False
-
-        self.streamer = CasEntryStreamer()
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.streamer.streaming_off()
 
     def setupUi(self):
-        self.setGeometry(0, 0, 520, 100)
+        self.setGeometry(0, 0, 500, 100)
         self.setWindowTitle(self.title)
         self.setWindowIcon(QIcon('icon.png'))
         self.wnd2Center()
 
         # add widgets
-        self.layout.addWidget(self.lbl)
-        self.layout.addWidget(self.ledt)
-        self.layout.addWidget(self.btn)
+        self.layout1.addWidget(self.lbl)
+        self.layout1.addWidget(self.ledt)
+        self.layout2.addWidget(self.lbl_state)
+        self.layout2.addWidget(self.btn)
+        self.main_layout.addLayout(self.layout1)
+        self.main_layout.addLayout(self.layout2)
 
         # set layout and stretch widgets
-        self.layout.setContentsMargins(5, 5, 5, 5)
-        self.layout.setStretchFactor(self.lbl, 2)
-        self.layout.setStretchFactor(self.ledt, 7)
-        self.layout.setStretchFactor(self.btn, 1)
-        self.widget.setLayout(self.layout)
+        self.layout1.setContentsMargins(5, 5, 5, 5)
+        self.layout1.setStretchFactor(self.lbl, 3)
+        self.layout1.setStretchFactor(self.ledt, 7)
+        self.layout2.setContentsMargins(5, 5, 5, 5)
+        self.layout2.setStretchFactor(self.lbl_state, 5)
+        self.layout2.setStretchFactor(self.btn, 5)
+        self.widget.setLayout(self.main_layout)
         self.setCentralWidget(self.widget)
 
     def createActions(self):
         self.btn.clicked.connect(self.toggle_streaming)
 
     def toggle_streaming(self):
-        if self.is_streaming:
+        if self.streamer.is_streaming:
             # streaming off
             self.streamer.streaming_off()
 
             # change btn caption
+            self.lbl_state.setText('스트리밍 상태: 멈춤')
             self.btn.setText('시작')
+            Log.d(self.tag, self.lbl_state.text())
 
         else:
             try:
+                # setup
                 self.streamer.set_observer(self.ledt.text())
+
+                # streaming on
+                self.streamer.streaming_on()
             except Exception as e:
-                Log.e('CasStreamerFrame', 'directory path error! :', e.__class__.__name__)
+                Log.e(self.tag, 'directory path error! :', e.__class__.__name__)
                 return
 
-            # streaming on
-            self.streamer.streaming_on()
-
             # change btn caption
+            self.lbl_state.setText('스트리밍 상태: 동작중')
             self.btn.setText('정지')
 
-        # toggle flag
-        self.is_streaming = not self.is_streaming
+            Log.d(self.tag, self.lbl_state.text())
 
     def wnd2Center(self):
         # geometry of the main window

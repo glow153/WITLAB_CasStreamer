@@ -26,7 +26,7 @@ class MyEventHandler(FileSystemEventHandler):
                 if entry.valid:
                     break
                 else:
-                    Log.e(self.tag, 'new ISD file is not valid. retrying...(%d / %d)' % (i + 1, self.retry))
+                    Log.e(self.tag, 'new file is not valid. retrying...(%d / %d)' % (i + 1, self.retry))
                     time.sleep(1)
 
             if not entry.valid:
@@ -43,6 +43,7 @@ class MyEventHandler(FileSystemEventHandler):
 class CasEntryStreamer(Singleton):
     def __init__(self):
         self.observer = None
+        self.is_streaming = False
 
     def set_observer(self, path=None):
         if path:
@@ -55,11 +56,15 @@ class CasEntryStreamer(Singleton):
         self.observer.schedule(event_handler, self.remote_dirpath, recursive=True)
 
     def streaming_on(self):
+        if not self.observer:
+            self.set_observer(self.remote_dirpath)
         self.observer.start()
+        self.is_streaming = True
 
     def streaming_off(self):
         self.observer.stop()
         self.observer = None
+        self.is_streaming = False
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.streaming_off()
