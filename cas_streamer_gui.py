@@ -13,7 +13,7 @@ class CasStreamerFrame(QMainWindow):
         super(CasStreamerFrame, self).__init__()
         self.title = title
         self.streamer = CasEntryStreamer()
-        self.tag = CasStreamerFrame.__class__.__name__
+        self.tag = 'CasStreamerFrame'
 
         # create widgets
         self.layout1 = QHBoxLayout()
