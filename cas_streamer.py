@@ -33,11 +33,40 @@ class MyEventHandler(FileSystemEventHandler):
                 Log.e(self.tag, 'ISD file parsing error. streaming aborted.')
                 return
 
-            Log.d(self.tag, 'send %s ::' % event.src_path, str(entry.get_category(category='all'))[:50], '...')
+            Log.d(self.tag, 'send %s ::' % event.src_path, str(entry.get_category())[:50], '...')
             # TODO: send cas entry
+            self.send_entry(entry, mode='cas')  # 분광 빼고 전부
+            # self.send_entry(entry, mode='cas_ird')  # 분광 빼고 전부
 
         else:
             pass
+
+    def send_entry(self, entry, mode):
+        import requests
+        post_data = entry.get_category(category=mode, str_key_type=True)
+
+        if mode == 'cas':
+            post_data = entry.get_category(category='except_sp_ird')
+            endpoint = 'stream'
+        elif mode == 'cas_ird':
+            post_data = {'datetime': entry.get_datetime(tostr=True),
+                         'data': entry.get_category(category='sp_ird', str_key_type=True)}
+            endpoint = 'stream_ird'
+        else:  # mode == 'all':
+            endpoint = 'stream'
+
+        response = None
+        while not response:
+            try:
+                Log.d(self.tag, 'method: POST, url: http://210.102.142.14:8880/api/nl/witlab/cas/' + endpoint)
+                Log.d(self.tag, 'body:', str(post_data)[:50], '...')
+                response = requests.post('http://210.102.142.14:8880/api/nl/witlab/cas/' + endpoint, json=post_data)
+                time.sleep(1)
+            except Exception as e:
+                Log.e(self.tag, 'http post error:', e.__class__.__name__)
+                time.sleep(1)
+
+        Log.d(self.tag, 'response: ', response.text)
 
 
 class CasEntryStreamer(Singleton):

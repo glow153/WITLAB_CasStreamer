@@ -13,7 +13,7 @@ class CasStreamerFrame(QMainWindow):
         super(CasStreamerFrame, self).__init__()
         self.title = title
         self.streamer = CasEntryStreamer()
-        self.tag = CasStreamerFrame.__class__.__name__
+        self.tag = 'CasStreamerFrame'
 
         # create widgets
         self.layout1 = QHBoxLayout()
@@ -66,7 +66,6 @@ class CasStreamerFrame(QMainWindow):
             # change btn caption
             self.lbl_state.setText('스트리밍 상태: 멈춤')
             self.btn.setText('시작')
-            Log.d(self.tag, self.lbl_state.text())
 
         else:
             try:
@@ -83,7 +82,7 @@ class CasStreamerFrame(QMainWindow):
             self.lbl_state.setText('스트리밍 상태: 동작중')
             self.btn.setText('정지')
 
-            Log.d(self.tag, self.lbl_state.text())
+        Log.d(self.tag, self.lbl_state.text(), ',', self.streamer.remote_dirpath)
 
     def wnd2Center(self):
         # geometry of the main window
