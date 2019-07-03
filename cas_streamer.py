@@ -7,9 +7,11 @@ import time
 
 
 class MyEventHandler(FileSystemEventHandler):
-    def __init__(self, observer, dirpath):
+    # post_url 추가
+    def __init__(self, observer, dirpath, post_url):
         self.observer = observer
         self.dirpath = dirpath
+        self.post_url = post_url
         self.tag = 'MyEventHandler'
         self.wait = 1
         self.retry = 10
@@ -52,15 +54,16 @@ class MyEventHandler(FileSystemEventHandler):
             post_data = {'datetime': entry.get_datetime(tostr=True),
                          'data': entry.get_category(category='sp_ird', str_key_type=True)}
             endpoint = 'stream_ird'
-        else:  # mode == 'all':
+        else:  # mode == 'all':.
             endpoint = 'stream'
 
         response = None
+        # post_url 사용
         while not response:
             try:
-                Log.d(self.tag, 'method: POST, url: http://210.102.142.14:8880/api/nl/witlab/cas/' + endpoint)
+                Log.d(self.tag, 'method: POST, url: ' + self.post_url + endpoint)
                 Log.d(self.tag, 'body:', str(post_data)[:50], '...')
-                response = requests.post('http://210.102.142.14:8880/api/nl/witlab/cas/' + endpoint, json=post_data)
+                response = requests.post(self.post_url + endpoint, json=post_data)
                 time.sleep(1)
             except Exception as e:
                 Log.e(self.tag, 'http post error:', e.__class__.__name__)
@@ -74,19 +77,27 @@ class CasEntryStreamer(Singleton):
         self.observer = None
         self.is_streaming = False
 
-    def set_observer(self, path=None):
+    # post url 추가
+    def set_observer(self, path=None, post_url=None):
         if path:
             self.remote_dirpath = path
         else:
             self.remote_dirpath = ''
 
+        # post_url 추가
+        if post_url:
+            self.post_url = post_url
+        else:
+            self.post_url = ''
+
         self.observer = Observer()
-        event_handler = MyEventHandler(self.observer, self.remote_dirpath)
+        # post_url 추가
+        event_handler = MyEventHandler(self.observer, self.remote_dirpath, self.post_url)
         self.observer.schedule(event_handler, self.remote_dirpath, recursive=True)
 
     def streaming_on(self):
         if not self.observer:
-            self.set_observer(self.remote_dirpath)
+            self.set_observer(self.remote_dirpath, self.post_url)
         self.observer.start()
         self.is_streaming = True
 
@@ -101,6 +112,6 @@ class CasEntryStreamer(Singleton):
 
 if __name__ == "__main__":
     streamer = CasEntryStreamer()
-    streamer.set_observer('C:/Users/JakePark/Desktop/tmp')
+    streamer.set_observer('C:/Users')
     streamer.streaming_on()
 

@@ -18,9 +18,12 @@ class CasStreamerFrame(QMainWindow):
         # create widgets
         self.layout1 = QHBoxLayout()
         self.layout2 = QHBoxLayout()
+        self.layout3 = QHBoxLayout()
         self.main_layout = QVBoxLayout()
         self.lbl = QLabel('스트리밍 대상 디렉토리')
         self.ledt = QLineEdit()
+        self.lbl2 = QLabel('POST 송신 URL')
+        self.ledt2 = QLineEdit()
         self.lbl_state = QLabel('스트리밍 상태: 멈춤')
         self.btn = QPushButton('시작')
         self.widget = QWidget()
@@ -40,18 +43,24 @@ class CasStreamerFrame(QMainWindow):
         # add widgets
         self.layout1.addWidget(self.lbl)
         self.layout1.addWidget(self.ledt)
-        self.layout2.addWidget(self.lbl_state)
-        self.layout2.addWidget(self.btn)
+        self.layout2.addWidget(self.lbl2)
+        self.layout2.addWidget(self.ledt2)
+        self.layout3.addWidget(self.lbl_state)
+        self.layout3.addWidget(self.btn)
         self.main_layout.addLayout(self.layout1)
         self.main_layout.addLayout(self.layout2)
+        self.main_layout.addLayout(self.layout3)
 
         # set layout and stretch widgets
         self.layout1.setContentsMargins(5, 5, 5, 5)
         self.layout1.setStretchFactor(self.lbl, 3)
         self.layout1.setStretchFactor(self.ledt, 7)
         self.layout2.setContentsMargins(5, 5, 5, 5)
-        self.layout2.setStretchFactor(self.lbl_state, 5)
-        self.layout2.setStretchFactor(self.btn, 5)
+        self.layout2.setStretchFactor(self.lbl2, 3)
+        self.layout2.setStretchFactor(self.ledt2, 7)
+        self.layout3.setContentsMargins(5, 5, 5, 5)
+        self.layout3.setStretchFactor(self.lbl_state, 5)
+        self.layout3.setStretchFactor(self.btn, 5)
         self.widget.setLayout(self.main_layout)
         self.setCentralWidget(self.widget)
 
@@ -70,7 +79,7 @@ class CasStreamerFrame(QMainWindow):
         else:
             try:
                 # setup
-                self.streamer.set_observer(self.ledt.text())
+                self.streamer.set_observer(self.ledt.text(), self.ledt2.text())
 
                 # streaming on
                 self.streamer.streaming_on()
@@ -97,7 +106,7 @@ class CasStreamerFrame(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = CasStreamerFrame('WitLab CAS data streamer v1.0 - jake')
+    window = CasStreamerFrame('WitLab CAS data streamer v1.0 - jake, v1.1 - momentum')
     window.show()
     app.exec_()
 
