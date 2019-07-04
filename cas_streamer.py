@@ -66,10 +66,13 @@ class MyEventHandler(FileSystemEventHandler):
                 time.sleep(1)
             except Exception as e:
                 Log.e(self.tag, 'http post error:', e.__class__.__name__)
+                response = "X"  # str
                 time.sleep(1)
 
-        Log.d(self.tag, 'response: ', response.text)
-
+        if(type(response) != str):
+            Log.d(self.tag, 'response: ', response.text)
+        else:
+            Log.d(self.tag, "not sended.")
 
 class CasEntryStreamer(Singleton):
     def __init__(self):
