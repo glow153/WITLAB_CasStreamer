@@ -21,9 +21,10 @@ class CasStreamerFrame(QMainWindow):
         self.layout3 = QHBoxLayout()
         self.main_layout = QVBoxLayout()
         self.lbl = QLabel('스트리밍 대상 디렉토리')
+        # write your streaming directory
         self.ledt = QLineEdit()
         self.lbl2 = QLabel('POST 송신 URL')
-        self.ledt2 = QLineEdit()
+        self.ledt2 = QLineEdit('http://127.0.0.1:4000/api/nl/witlab/cas/')
         self.lbl_state = QLabel('스트리밍 상태: 멈춤')
         self.btn = QPushButton('시작')
         self.widget = QWidget()
@@ -106,7 +107,6 @@ class CasStreamerFrame(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = CasStreamerFrame('WitLab CAS data streamer v1.0 - jake, v1.1 - momentum')
+    window = CasStreamerFrame('WitLab CAS data streamer v1.2 (Jake, Momentum)')
     window.show()
     app.exec_()
-

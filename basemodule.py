@@ -20,4 +20,3 @@ class MysqlManager(Singleton):
 
     def close(self):
         self.conn.close()
-
