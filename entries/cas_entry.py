@@ -208,11 +208,8 @@ class CasEntry:
             d = self._results
         elif category == 'general_information':
             d = self._general_information
-        elif category == 'sp_ird':
-            d = sp_ird if str_key_type else self._sp_ird
         elif category == 'uv':
             d = self._uv
-
         elif category == 'all':
             d = {'datetime': self.get_datetime(),
                  'data': {
