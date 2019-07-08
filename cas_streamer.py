@@ -45,13 +45,12 @@ class MyEventHandler(FileSystemEventHandler):
 
     def send_entry(self, entry, mode):
         import requests
-        post_data = entry.get_category(category=mode, str_key_type=True)
 
         if mode == 'cas':
             post_data = entry.get_category(category='all')
             endpoint = 'stream'
         elif mode == 'cas_ird':
-            post_data = entry.get_category(category='ird')
+            post_data = entry.get_category(category='ird', str_key_type=True)
             endpoint = 'stream_ird'
         else:  # mode == 'all':.
             endpoint = 'stream'
@@ -66,13 +65,10 @@ class MyEventHandler(FileSystemEventHandler):
                 time.sleep(1)
             except Exception as e:
                 Log.e(self.tag, 'http post error:', e.__class__.__name__)
-                response = "X"  # str
                 time.sleep(1)
 
         if(type(response) != str):
             Log.d(self.tag, 'response: ', response.text)
-        else:
-            Log.d(self.tag, "not sended.")
 
 class CasEntryStreamer(Singleton):
     def __init__(self):

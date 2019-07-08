@@ -222,7 +222,7 @@ class CasEntry:
                  }
         elif category == 'ird':
             d = {
-                'datetime': self.get_datetime(True),
+                'datetime': self.get_datetime(),
                 'sp_ird': sp_ird if str_key_type else self._sp_ird
             }
 
