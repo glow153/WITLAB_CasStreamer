@@ -1,6 +1,6 @@
 import sys
 
-from PyQt5.QtGui import QIcon
+# from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QLabel, QHBoxLayout, QVBoxLayout,
                              QWidget, QMainWindow, QLineEdit, QPushButton)
 
@@ -40,7 +40,7 @@ class CasStreamerFrame(QMainWindow):
     def setupUi(self):
         self.setGeometry(0, 0, 500, 100)
         self.setWindowTitle(self.title)
-        self.setWindowIcon(QIcon('icon.png'))
+        # self.setWindowIcon(QIcon('icon.png'))
         self.wnd2Center()
 
         # add widgets
