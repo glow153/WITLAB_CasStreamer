@@ -12,8 +12,8 @@ class CasStreamerFrame(QMainWindow):
     """
     current issue:
     1. backend 에서 invalid req body 가 뜨면 client는 재전송을 하는데
-       이때 스트리머 정지버튼 누르면 뻗음
-    2. cas, cas_ird, cas_simple, cas_file 체크박스 만들면 좋을듯
+       이때 스트리머 정지버튼 누르면 뻗음 => 2.0 적용 완료
+    2. cas, cas_ird, cas_simple, cas_file 체크박스 만들면 좋을듯 => 2.0 적용 완료
     """
     def __init__(self, title):
         from datetime import datetime
@@ -22,7 +22,7 @@ class CasStreamerFrame(QMainWindow):
         self.streamer = CasEntryStreamer()
         self.tag = 'CasStreamerFrame'
 
-        self.dir_path = 'C:\\Users\\WITLab\\Desktop\\2019 natural\\%s' % (datetime.now().strftime('%Y%m%d'))
+        self.local_dirpath = 'C:\\Users\\WITLab\\Desktop\\2019 natural\\%s' % (datetime.now().strftime('%Y%m%d'))
         self.url = 'http://127.0.0.1:4000/api/nl/witlab/cas/'
 
         # create widgets
@@ -32,7 +32,7 @@ class CasStreamerFrame(QMainWindow):
         self.layout_status = QHBoxLayout()
         self.main_layout = QVBoxLayout()
         self.lbl_dir = QLabel()
-        self.ledt_dirpath = QLineEdit(self.dir_path)
+        self.ledt_dirpath = QLineEdit(self.local_dirpath)
         self.lbl_url = QLabel()
         self.ledt_url = QLineEdit(self.url)
         self.lbl_sendtype = QLabel()
@@ -70,7 +70,7 @@ class CasStreamerFrame(QMainWindow):
         self.main_layout.addLayout(self.layout_sendtype)
         self.main_layout.addLayout(self.layout_status)
 
-        # set prperties
+        # set properties
         self.lbl_dir.setText('Local Directory to Watch')
         self.lbl_url.setText('Remote API URL')
         self.lbl_sendtype.setText('Send Data Type')
@@ -79,6 +79,8 @@ class CasStreamerFrame(QMainWindow):
         self.chbx_basic.setChecked(True)
         self.chbx_ird.setChecked(True)
         self.chbx_simple.setChecked(True)
+
+        # file streaming : to be continued...
         self.chbx_file.setEnabled(False)
 
         # set layout and stretch widgets
@@ -106,13 +108,26 @@ class CasStreamerFrame(QMainWindow):
     def on_btn_start_clicked(self):
         self.toggle_streaming()
 
+    def get_flags(self):
+        return {
+            'basic': self.chbx_basic.isChecked(),
+            'ird': self.chbx_ird.isChecked(),
+            'simple': self.chbx_simple.isChecked(),
+            'file': self.chbx_file.isChecked()
+        }
+
     def toggle_streaming(self):
-        self.dir_path = self.ledt_dirpath.text()
+        self.local_dirpath = self.ledt_dirpath.text()
         self.url = self.ledt_url.text()
 
         if self.streamer.is_streaming:
             # streaming off
             self.streamer.streaming_off()
+
+            # enable checkbox
+            self.chbx_basic.setEnabled(True)
+            self.chbx_ird.setEnabled(True)
+            self.chbx_simple.setEnabled(True)
 
             # change btn caption
             self.lbl_state.setText('Streaming Status: Stopped')
@@ -122,20 +137,24 @@ class CasStreamerFrame(QMainWindow):
         else:
             try:
                 # setup
-                self.streamer.set_observer(self.dir_path, self.url)
-
+                self.streamer.setup_streamer(self.local_dirpath, self.url, self.get_flags())
                 # streaming on
                 self.streamer.streaming_on()
             except Exception as e:
-                Log.e(self.tag, 'streaming start error! :', e.with_traceback())
+                Log.e(self.tag, 'streaming start error! :', e.__class__.__name__)
                 return
+
+            # disable checkbox
+            self.chbx_basic.setEnabled(False)
+            self.chbx_ird.setEnabled(False)
+            self.chbx_simple.setEnabled(False)
 
             # change btn caption
             self.lbl_state.setText('Streaming Status: Streaming')
             self.lbl_state.setStyleSheet('QLabel {color: green;}')
             self.btn_start.setText('STOP')
 
-        Log.d(self.tag, self.lbl_state.text(), ',', self.streamer.local_dirpath)
+        Log.d(self.tag, self.lbl_state.text(), ',', self.local_dirpath)
 
     def wnd2Center(self):
         # geometry of the main window

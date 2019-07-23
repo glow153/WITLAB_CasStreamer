@@ -18,8 +18,8 @@ class CasEntry:
     _results = {}
     _general_information = {}
     _sp_ird = {}
+    _strkey_ird = {}
     _uv = {}
-    _additionals = {}
     valid = None  # 유효 플래그 (ISD 파일이 올바른 형식이고 mapping이 정상적이면 True)
     objDatetime = None  # 측정 시간 객체, str으로 반환 및 시간연산을 위해 쓰임
 
@@ -157,12 +157,15 @@ class CasEntry:
         :param fname: ISD 파일의 절대경로, :type: str
         :param debug: ISD parsing debug mode, :type: bool
         """
-
+        import sys
         # 0. initialize vars
         self.fname = fname
         self.debug = debug
         try:
-            self.tag = 'CasEntry(%s)' % fname.split('\\')[1]
+            if sys.platform == 'win32':
+                self.tag = 'CasEntry(%s)' % fname.split('\\')[1]
+            else:
+                self.tag = 'CasEntry(%s)' % fname.split('/')[-1]
         except:
             self.valid = False
             return
@@ -249,7 +252,7 @@ class CasEntry:
                     strKey, strValue = line.split('\t')
                     key = float(strKey.strip())
                     value = float(strValue.strip())
-                else:    # if there is no '=' or 'tab'
+                else:    # if there is neither '=' nor 'tab'
                     line = file.readline()  # continue to read next
                     continue
 
@@ -264,6 +267,7 @@ class CasEntry:
 
                 elif category == 4:
                     self._sp_ird[float(key)] = value
+                    self._strkey_ird[str(key).replace('.', '_')] = value
 
                 else:  # type == 0
                     pass
@@ -320,8 +324,12 @@ class CasEntry:
         self._uv['auv'] = self.get_ird(200, 400, weight_func='actinic_uv', alg=alg)
 
     def set_additional_data(self):
+        import sys
         self._general_information['file_abs_path'] = self.fname
-        self._general_information['file_name'] = self.fname.split('\\')[1]
+        if sys.platform == 'win32':
+            self._general_information['file_name'] = self.fname.split('\\')[1]
+        else:
+            self._general_information['file_name'] = self.fname.split('/')[-1]
 
         self._measurement_conditions['CCDTemperature'] = float(self._measurement_conditions['CCDTemperature'].split()[0])
         self._measurement_conditions['DCCCDTemperature'] = float(self._measurement_conditions['DCCCDTemperature'].split()[0])
@@ -357,11 +365,11 @@ class CasEntry:
         # MongoDB의 기본 데이터형식인 bson은 key가 무조건 str이어야한다...
         # 그래서 str type key가 아닌 유일한 dict category인 spectral irradiance data dict에 대해
         # key type change code가 필요하다
-        sp_ird = {}
-        if str_key_type:
-            keyset = self._sp_ird.keys()
-            for key in keyset:
-                sp_ird[str(key).replace('.', '_')] = self._sp_ird[key]
+        # strkey_ird = {}
+        # if str_key_type:
+        #     keyset = self._sp_ird.keys()
+        #     for key in keyset:
+        #         strkey_ird[str(key).replace('.', '_')] = self._sp_ird[key]
 
         d = {}
         if category == 'measurement_conditions':
@@ -371,7 +379,7 @@ class CasEntry:
         elif category == 'general_information':
             d = self._general_information
         elif category == 'sp_ird':
-            d = sp_ird if str_key_type else self._sp_ird
+            d = self._sp_ird
         elif category == 'uv':
             d = self._uv
 
@@ -381,7 +389,7 @@ class CasEntry:
                     'measurement_conditions': self._measurement_conditions,
                     'results': self._results,
                     'general_information': self._general_information,
-                    'sp_ird': sp_ird if str_key_type else self._sp_ird,
+                    'sp_ird': self._strkey_ird if str_key_type else self._sp_ird,
                     'uv': self._uv
                     }
                  }
@@ -398,8 +406,8 @@ class CasEntry:
 
         elif category == 'ird':
             d = {
-                'datetime': self.get_datetime(tostr=True),
-                'sp_ird': sp_ird if str_key_type else self._sp_ird
+                'datetime': self.get_datetime(True),
+                'sp_ird': self._strkey_ird if str_key_type else self._sp_ird,
             }
 
         elif category == 'simple':
@@ -407,28 +415,28 @@ class CasEntry:
 
             for k in self._general_information.keys():
                 try:
-                    new_key = self.newkeymap[k]
+                    new_key = self.simple_keymap[k]
                     d[new_key] = self._general_information[k]
                 except KeyError:
                     continue
 
             for k in self._measurement_conditions.keys():
                 try:
-                    new_key = self.newkeymap[k]
+                    new_key = self.simple_keymap[k]
                     d[new_key] = self._measurement_conditions[k]
                 except KeyError:
                     continue
 
             for k in self._results.keys():
                 try:
-                    new_key = self.newkeymap[k]
+                    new_key = self.simple_keymap[k]
                     d[new_key] = self._results[k]
                 except KeyError:
                     continue
 
             for k in self._uv.keys():
                 try:
-                    new_key = self.newkeymap[k]
+                    new_key = self.simple_keymap[k]
                     d[new_key] = self._uv[k]
                 except KeyError:
                     continue

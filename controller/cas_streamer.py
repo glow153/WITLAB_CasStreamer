@@ -8,11 +8,13 @@ import time
 
 
 class MyEventHandler(FileSystemEventHandler):
-    def __init__(self, observer, stream_schd, dir_path, url):
+    def __init__(self, observer, stream_schd, dir_path, url, flags):
         self.observer = observer
         self.stream_schd = stream_schd
         self.dir_path = dir_path
         self.url = url
+        self.flags = flags
+
         self.tag = 'MyEventHandler'
         self.wait = 1
         self.retry = 10
@@ -37,74 +39,81 @@ class MyEventHandler(FileSystemEventHandler):
                 return
 
             Log.d(self.tag, 'send %s ::' % event.src_path, str(entry.get_category())[:50], '...')
+
             # TODO: send cas entry
-            # self.send_stream(entry, mode='cas')  # 분광 빼고 전부
-            # self.send_stream(entry, mode='cas_ird')  # 분광만
-            # self.send_stream(entry, mode='simple')  # 간략 데이터
-            self.send_stream(entry, mode='test')  # test 데이터
+            if self.flags['basic']:
+                self.send_stream(entry, mode='basic')  # 분광 빼고 전부
+
+            if self.flags['ird']:
+                self.send_stream(entry, mode='ird',)  # 분광만
+
+            if self.flags['simple']:
+                self.send_stream(entry, mode='simple')  # 간략 데이터
+
+            if self.flags['file']:
+                self.send_stream(entry, mode='file')
 
         else:
             pass
 
     def send_stream(self, entry, mode):
-        post_data = {}
-
-        if mode == 'cas':
+        if mode == 'basic':
             post_data = entry.get_category(category='basic')
-        elif mode == 'cas_ird':
-            post_data = entry.get_category(category='ird')
+            footer = 'stream'
+        elif mode == 'ird':
+            post_data = entry.get_category(category='ird', str_key_type=True)
+            footer = 'stream_ird'
         elif mode == 'simple':
             post_data = entry.get_category(category='simple')
-        elif mode == 'test':
-            post_data = entry.get_category(category='simple')
-        elif mode == 'all':
-            post_data = entry.get_category(category='all', str_key_type=True)
+            footer = 'stream_simple'
+        elif mode == 'file':
+            post_data = entry.get_category(category='simple')  # file 모드가 현재 테스트모드로 동작중
+            footer = 'stream_test'
+        else:
+            Log.e(self.tag, 'invalid send stream mode. abort send stream.')
+            return
 
-        self.stream_schd.put({'url': self.url, 'post_data': post_data})
+        self.stream_schd.put({'url': self.url + footer, 'post_data': post_data})
 
 
 class CasEntryStreamer(Singleton):
     def __init__(self):
+        import queue
         self.observer = None
         self.stream_schd = None
         self.is_streaming = False
-        self.local_dirpath = ''
-        self.url = ''
+        self.tag = 'CasEntryStreamer'
+        self.schd_queue = queue.Queue()
 
-    def set_observer(self, path, url):
-        if path:
-            self.local_dirpath = path
-        else:
-            self.local_dirpath = ''
-
-        self.url = url
-
+    def setup_streamer(self, local_dirpath, url, flags):
         self.observer = Observer()
-        event_handler = MyEventHandler(self.observer, self.stream_schd, self.local_dirpath, self.url)
-        self.observer.schedule(event_handler, self.local_dirpath, recursive=True)
+        self.stream_schd = StreamScheduler(self.schd_queue)
 
-    def streaming_on(self, flags):
+        event_handler = MyEventHandler(self.observer, self.stream_schd, local_dirpath, url, flags)
+        self.observer.schedule(event_handler, local_dirpath, recursive=True)
+
+    def streaming_on(self):
         if not self.observer:
-            self.set_observer(self.local_dirpath)
-        self.stream_schd = StreamScheduler()
+            Log.e(self.tag, 'observer not set. it must be set before streaming.')
+            return
+
         self.observer.start()
         self.stream_schd.start_thread()
+
         self.is_streaming = True
 
     def streaming_off(self):
         self.observer.stop()
         self.observer = None
         self.stream_schd.stop_thread()
+        self.stream_schd = None
         self.is_streaming = False
+        if self.schd_queue.qsize() > 0:
+            Log.e(self.tag, 'queue is not empty.')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.streaming_off()
         if self.stream_schd.is_on:
             self.stream_schd.stop_thread()
 
-
-if __name__ == "__main__":
-    streamer = CasEntryStreamer()
-    streamer.set_observer('C:/Users/JakePark/Desktop/tmp', 'http://210.102.142.14:4000/api/nl/witlab/cas/')
-    streamer.streaming_on()
 
