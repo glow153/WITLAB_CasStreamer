@@ -9,7 +9,7 @@ class Log:
 
     @staticmethod
     def _get_header(tag, ):
-        return 'dbg_' + tag + ' ' + Log._timestamp() + '>>'
+        return '[' + tag + ' ' + Log._timestamp() + ']'
 
     @staticmethod
     def d(tag, *content):

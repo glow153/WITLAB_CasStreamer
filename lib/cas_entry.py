@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from debugmodule import Log
+from lib.debugmodule import Log
 
 
 class CasEntry:
@@ -23,7 +23,7 @@ class CasEntry:
     valid = None  # 유효 플래그 (ISD 파일이 올바른 형식이고 mapping이 정상적이면 True)
     objDatetime = None  # 측정 시간 객체, str으로 반환 및 시간연산을 위해 쓰임
 
-    newkeymap = {  # old_name : new_name
+    simple_keymap = {  # old_name : new_name
         'file_abs_path': 'file_abs_path',
         'file_name': 'file_name',
         'IntegrationTime': 'integration_time',
@@ -345,7 +345,7 @@ class CasEntry:
                     Log.e(self.tag + '.get_datetime()')
                 return None
 
-    def get_category(self, category='all', str_key_type=False, to_json=False):
+    def get_category(self, category='basic', str_key_type=False, to_json=False):
         """
         ISD 파일의 큰 범주에 해당하는 전체 데이터를 dictionary 형태로 반환
         :param category: 범주 이름
@@ -386,15 +386,15 @@ class CasEntry:
                     }
                  }
 
-        elif category == 'except_sp_ird':
+        elif category == 'basic':
             d = {'datetime': self.get_datetime(True),
                  'data': {
-                     'measurement_conditions': self._measurement_conditions,
-                     'results': self._results,
-                     'general_information': self._general_information,
-                     'uv': self._uv
+                    'measurement_conditions': self._measurement_conditions,
+                    'results': self._results,
+                    'general_information': self._general_information,
+                    'uv': self._uv
+                    }
                  }
-            }
 
         elif category == 'ird':
             d = {
@@ -504,15 +504,15 @@ class CasEntry:
                     continue
 
                 if weight_func == 'ery':
-                    from entries.ref_func import erythemal_action_spectrum as eryf
+                    from lib.ref_func import erythemal_action_spectrum as eryf
                     weightl = eryf(wll)
                     weightr = eryf(wlr)
                 elif weight_func == 'vitd':
-                    from entries.ref_func import vitd_weight_func_interpolated as vitdf
+                    from lib.ref_func import vitd_weight_func_interpolated as vitdf
                     weightl = vitdf(wll)
                     weightr = vitdf(wlr)
                 elif weight_func == 'actinic_uv':
-                    from entries.ref_func import actinic_uv_weight_func as actuvf
+                    from lib.ref_func import actinic_uv_weight_func as actuvf
                     weightl = actuvf(wll)
                     weightr = actuvf(wlr)
                 else:
