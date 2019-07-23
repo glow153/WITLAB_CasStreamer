@@ -161,7 +161,11 @@ class CasEntry:
         # 0. initialize vars
         self.fname = fname
         self.debug = debug
-        self.tag = 'CasEntry(%s)' % fname.split('\\')[1]
+        try:
+            self.tag = 'CasEntry(%s)' % fname.split('\\')[1]
+        except:
+            self.valid = False
+            return
 
         # 1. ISD 파일 읽기
         try:

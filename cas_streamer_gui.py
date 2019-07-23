@@ -9,6 +9,12 @@ from debugmodule import Log
 
 
 class CasStreamerFrame(QMainWindow):
+    """
+    current issue:
+    1. backend 에서 invalid req body 가 뜨면 client는 재전송을 하는데
+       이때 스트리머 정지버튼 누르면 뻗음
+    2. cas, cas_ird, cas_simple, cas_file 체크박스 만들면 좋을듯
+    """
     def __init__(self, title):
         from datetime import datetime
         super(CasStreamerFrame, self).__init__()
@@ -16,16 +22,19 @@ class CasStreamerFrame(QMainWindow):
         self.streamer = CasEntryStreamer()
         self.tag = 'CasStreamerFrame'
 
-        # create widgetsz
+        self.dir_path = 'C:\\Users\\WITLab\\Desktop\\2019 natural\\%s' % (datetime.now().strftime('%Y%m%d'))
+        self.endpoint = 'http://127.0.0.1:4000/api/nl/witlab/cas/'
+
+        # create widgets
         self.layout1 = QHBoxLayout()
         self.layout2 = QHBoxLayout()
         self.layout3 = QHBoxLayout()
         self.main_layout = QVBoxLayout()
         self.lbl = QLabel('스트리밍 대상 디렉토리')
         # write your streaming directory
-        self.ledt = QLineEdit('C:\\Users\\WITLab\\Desktop\\2019 natural\\%s' % (datetime.now().strftime('%Y%m%d')))
+        self.ledt = QLineEdit(self.dir_path)
         self.lbl2 = QLabel('POST 송신 URL')
-        self.ledt2 = QLineEdit('http://127.0.0.1:4000/api/nl/witlab/cas/')
+        self.ledt2 = QLineEdit(self.endpoint)
         self.lbl_state = QLabel('스트리밍 상태: 멈춤')
         self.lbl_state.setStyleSheet('QLabel {color: red;}')
         self.btn = QPushButton('시작')
@@ -68,6 +77,8 @@ class CasStreamerFrame(QMainWindow):
         self.setCentralWidget(self.widget)
 
     def createActions(self):
+        self.dir_path = self.ledt.text()
+        self.endpoint = self.ledt2.text()
         self.btn.clicked.connect(self.toggle_streaming)
 
     def toggle_streaming(self):
@@ -83,7 +94,7 @@ class CasStreamerFrame(QMainWindow):
         else:
             try:
                 # setup
-                self.streamer.set_observer(self.ledt.text(), self.ledt2.text())
+                self.streamer.set_observer(self.dir_path, self.endpoint)
 
                 # streaming on
                 self.streamer.streaming_on()
@@ -96,7 +107,7 @@ class CasStreamerFrame(QMainWindow):
             self.lbl_state.setStyleSheet('QLabel {color: green;}')
             self.btn.setText('정지')
 
-        Log.d(self.tag, self.lbl_state.text(), ',', self.streamer.remote_dirpath)
+        Log.d(self.tag, self.lbl_state.text(), ',', self.streamer.local_dirpath)
 
     def wnd2Center(self):
         # geometry of the main window
@@ -111,6 +122,6 @@ class CasStreamerFrame(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = CasStreamerFrame('WitLab CAS data streamer v1.2 (Jake, Momentum)')
+    window = CasStreamerFrame('WitLab CAS data streamer v1.3 (Jake, Momentum)')
     window.show()
     app.exec_()

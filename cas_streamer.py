@@ -7,9 +7,10 @@ import time
 
 
 class MyEventHandler(FileSystemEventHandler):
-    def __init__(self, observer, dirpath):
+    def __init__(self, observer, dir_path, url):
         self.observer = observer
-        self.dirpath = dirpath
+        self.dir_path = dir_path
+        self.url = url
         self.tag = 'MyEventHandler'
         self.wait = 1
         self.retry = 10
@@ -35,8 +36,10 @@ class MyEventHandler(FileSystemEventHandler):
 
             Log.d(self.tag, 'send %s ::' % event.src_path, str(entry.get_category())[:50], '...')
             # TODO: send cas entry
-            self.send_entry(entry, mode='cas')  # 분광 빼고 전부
-            # self.send_entry(entry, mode='cas_ird')  # 분광 빼고 전부
+            # self.send_entry(entry, mode='cas')  # 분광 빼고 전부
+            # self.send_entry(entry, mode='cas_ird')  # 분광만
+            # self.send_entry(entry, mode='simple')  # 간략 데이터
+            self.send_entry(entry, mode='test')  # test 데이터
 
         else:
             pass
@@ -47,20 +50,25 @@ class MyEventHandler(FileSystemEventHandler):
 
         if mode == 'cas':
             post_data = entry.get_category(category='except_sp_ird')
-            endpoint = 'stream'
+            footer = 'stream'
         elif mode == 'cas_ird':
-            post_data = {'datetime': entry.get_datetime(tostr=True),
-                         'data': entry.get_category(category='sp_ird', str_key_type=True)}
-            endpoint = 'stream_ird'
+            post_data = entry.get_category(category='ird')
+            footer = 'stream_ird'
+        elif mode == 'simple':
+            post_data = entry.get_category(category='simple')
+            footer = 'stream_simple'
+        elif mode == 'test':
+            post_data = entry.get_category(category='simple')
+            footer = 'stream_test'
         else:  # mode == 'all':
-            endpoint = 'stream'
+            footer = 'stream'
 
         response = None
         while not response:
             try:
-                Log.d(self.tag, 'method: POST, url: http://210.102.142.14:8880/api/nl/witlab/cas/' + endpoint)
-                Log.d(self.tag, 'body:', str(post_data)[:50], '...')
-                response = requests.post('http://210.102.142.14:8880/api/nl/witlab/cas/' + endpoint, json=post_data)
+                Log.d(self.tag, 'method: POST, url: ' + self.url + footer)
+                Log.d(self.tag, 'body:', str(post_data)[:50], '...' if len(post_data) > 50 else '')
+                response = requests.post(self.url + footer, json=post_data)
                 time.sleep(1)
             except Exception as e:
                 Log.e(self.tag, 'http post error:', e.__class__.__name__)
@@ -73,20 +81,24 @@ class CasEntryStreamer(Singleton):
     def __init__(self):
         self.observer = None
         self.is_streaming = False
+        self.local_dirpath = ''
+        self.url = ''
 
-    def set_observer(self, path=None):
+    def set_observer(self, path, url):
         if path:
-            self.remote_dirpath = path
+            self.local_dirpath = path
         else:
-            self.remote_dirpath = ''
+            self.local_dirpath = ''
+
+        self.url = url
 
         self.observer = Observer()
-        event_handler = MyEventHandler(self.observer, self.remote_dirpath)
-        self.observer.schedule(event_handler, self.remote_dirpath, recursive=True)
+        event_handler = MyEventHandler(self.observer, self.local_dirpath, self.url)
+        self.observer.schedule(event_handler, self.local_dirpath, recursive=True)
 
     def streaming_on(self):
         if not self.observer:
-            self.set_observer(self.remote_dirpath)
+            self.set_observer(self.local_dirpath)
         self.observer.start()
         self.is_streaming = True
 
