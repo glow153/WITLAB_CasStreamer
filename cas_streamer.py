@@ -38,7 +38,7 @@ class MyEventHandler(FileSystemEventHandler):
             Log.d(self.tag, 'send %s ::' % event.src_path, str(entry.get_category())[:50], '...')
             # TODO: send cas entry
             self.send_entry(entry, mode='cas')  # 분광 빼고 전부
-            self.send_entry(entry, mode='cas_ird')  # 분광 빼고 전부
+            self.send_entry(entry, mode='cas_ird')
 
         else:
             pass
@@ -47,10 +47,11 @@ class MyEventHandler(FileSystemEventHandler):
         import requests
 
         if mode == 'cas':
-            post_data = entry.get_category(category='all')
+            post_data = entry.get_category(category='except_sp_ird')
             endpoint = 'stream'
         elif mode == 'cas_ird':
-            post_data = entry.get_category(category='ird', str_key_type=True)
+            post_data = {'datetime': entry.get_datetime(tostr=True),
+                         'sp_ird': entry.get_category(category='sp_ird', str_key_type=True)}
             endpoint = 'stream_ird'
         else:  # mode == 'all':.
             endpoint = 'stream'

@@ -10,6 +10,7 @@ from debugmodule import Log
 
 class CasStreamerFrame(QMainWindow):
     def __init__(self, title):
+        from datetime import datetime
         super(CasStreamerFrame, self).__init__()
         self.title = title
         self.streamer = CasEntryStreamer()
@@ -22,10 +23,11 @@ class CasStreamerFrame(QMainWindow):
         self.main_layout = QVBoxLayout()
         self.lbl = QLabel('스트리밍 대상 디렉토리')
         # write your streaming directory
-        self.ledt = QLineEdit()
+        self.ledt = QLineEdit('C:\\Users\\WITLab\\Desktop\\2019 natural\\%s' % (datetime.now().strftime('%Y%m%d')))
         self.lbl2 = QLabel('POST 송신 URL')
         self.ledt2 = QLineEdit('http://127.0.0.1:4000/api/nl/witlab/cas/')
         self.lbl_state = QLabel('스트리밍 상태: 멈춤')
+        self.lbl_state.setStyleSheet('QLabel {color: red;}')
         self.btn = QPushButton('시작')
         self.widget = QWidget()
 
@@ -75,6 +77,7 @@ class CasStreamerFrame(QMainWindow):
 
             # change btn caption
             self.lbl_state.setText('스트리밍 상태: 멈춤')
+            self.lbl_state.setStyleSheet('QLabel {color: red;}')
             self.btn.setText('시작')
 
         else:
@@ -90,6 +93,7 @@ class CasStreamerFrame(QMainWindow):
 
             # change btn caption
             self.lbl_state.setText('스트리밍 상태: 동작중')
+            self.lbl_state.setStyleSheet('QLabel {color: green;}')
             self.btn.setText('정지')
 
         Log.d(self.tag, self.lbl_state.text(), ',', self.streamer.remote_dirpath)
