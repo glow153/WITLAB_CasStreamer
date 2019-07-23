@@ -385,12 +385,19 @@ class CasEntry:
         elif category == 'except_sp_ird':
             d = {'datetime': self.get_datetime(True),
                  'data': {
-                    'measurement_conditions': self._measurement_conditions,
-                    'results': self._results,
-                    'general_information': self._general_information,
-                    'uv': self._uv
-                    }
+                     'measurement_conditions': self._measurement_conditions,
+                     'results': self._results,
+                     'general_information': self._general_information,
+                     'uv': self._uv
                  }
+            }
+
+        elif category == 'ird':
+            d = {
+                'datetime': self.get_datetime(tostr=True),
+                'sp_ird': sp_ird if str_key_type else self._sp_ird
+            }
+
         elif category == 'simple':
             d = {'datetime': self.get_datetime(True)}
 
