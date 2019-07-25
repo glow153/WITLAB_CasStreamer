@@ -37,7 +37,7 @@ class StreamScheduler(threading.Thread):
                     try:
                         Log.d(self.tag, 'method: POST, url: ' + url)
                         Log.d(self.tag, 'body:', str(post_data)[:70], '...' if len(str(post_data)) > 70 else '')
-                        response = requests.post(url, json=post_data)
+                        response = requests.post(url, data=post_data)
                         send_error = False
                     except Exception as e:
                         Log.e(self.tag, 'http post error:', e.__class__.__name__)
@@ -80,5 +80,5 @@ class StreamScheduler(threading.Thread):
             }
         :return:
         """
-        Log.d(self.tag, 'send command has been put in stream scheduler queue: ', d['url'].split('/')[:-1])
+        Log.d(self.tag, 'send command has been put in stream scheduler queue: ', d['url'].split('/')[-1])
         self.q.put(d)

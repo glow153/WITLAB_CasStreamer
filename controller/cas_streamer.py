@@ -38,8 +38,6 @@ class MyEventHandler(FileSystemEventHandler):
                 Log.e(self.tag, 'ISD file parsing error. streaming aborted.')
                 return
 
-            Log.d(self.tag, 'send %s ::' % event.src_path, str(entry.get_category())[:50], '...')
-
             # TODO: send cas entry
             if self.flags['basic']:
                 self.send_stream(entry, mode='basic')  # 분광 빼고 전부
@@ -73,6 +71,7 @@ class MyEventHandler(FileSystemEventHandler):
             Log.e(self.tag, 'invalid send stream mode. abort send stream.')
             return
 
+        Log.d(self.tag, 'send stream %s ::' % entry.fname, str(post_data)[:50], '...')
         self.stream_schd.put({'url': self.url + footer, 'post_data': post_data})
 
 
