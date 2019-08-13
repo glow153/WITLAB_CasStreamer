@@ -29,31 +29,37 @@ class StreamScheduler(threading.Thread):
                     post_data = send_cmd['post_data']
                 except KeyError:
                     Log.e(self.tag, 'send command format error:', send_cmd)
-                    continue
+                    continue  # discard command dict
 
                 # send to backend server
-                send_error = True
-                while send_error:
+                retry = 10
+                # while resend:
+                i = 0
+                for i in range(1, retry+1):
                     try:
-                        Log.d(self.tag, 'method: POST, url: ' + url)
-                        Log.d(self.tag, 'body:', str(post_data)[:70], '...' if len(str(post_data)) > 70 else '')
-                        response = requests.post(url, data=post_data)
-                        send_error = False
+                        Log.d(self.tag, 'tried: %d, url: %s' % (i, url))
+                        Log.d(self.tag, 'body:', str(post_data)[:70]+'...')
+                        response = requests.post(url, json=post_data)
+                        # response = requests.post(url, data=post_data) => data가 아니라 json
                     except Exception as e:
-                        Log.e(self.tag, 'http post error:', e.__class__.__name__)
-                        send_error = True
-                        time.sleep(1)
-                    finally:
+                        Log.e(self.tag, 'streaming error:', e.__class__.__name__)
+                        time.sleep(0.5)
+                        continue  # retry
+                    else:
                         try:
-                            if response.status_code != 200:
+                            if response.status_code == 200:
+                                Log.e(self.tag, response.text)
+                                break  # succeed stream
+                            else:
                                 Log.e(self.tag, 'http post error: %d' % response.status_code)
-                                send_error = True
+                                continue  # retry
                         except:
                             Log.e(self.tag, 'no response.')
-                            send_error = True
-                        finally:
-                            Log.d(self.tag, response.text)
+                            continue  # retry
 
+                if i >= 10:
+                    Log.d(self.tag, 'tried %d times, reinsert into queue.' % i)
+                    self.q.put(send_cmd)
             # Log.e(self.tag, 'send thread running...')
             time.sleep(1)
 
@@ -80,5 +86,5 @@ class StreamScheduler(threading.Thread):
             }
         :return:
         """
-        Log.d(self.tag, 'send command has been put in stream scheduler queue: ', d['url'].split('/')[-1])
+        Log.d(self.tag, 'send command has been put in queue. cmd type:', d['url'].split('/')[-1])
         self.q.put(d)

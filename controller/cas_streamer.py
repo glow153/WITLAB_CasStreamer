@@ -8,9 +8,9 @@ import time
 
 
 class MyEventHandler(FileSystemEventHandler):
-    def __init__(self, observer, stream_schd, dir_path, url, flags):
+    def __init__(self, observer, scheduler, dir_path, url, flags):
         self.observer = observer
-        self.stream_schd = stream_schd
+        self.ref_scheduler = scheduler
         self.dir_path = dir_path
         self.url = url
         self.flags = flags
@@ -71,24 +71,24 @@ class MyEventHandler(FileSystemEventHandler):
             Log.e(self.tag, 'invalid send stream mode. abort send stream.')
             return
 
-        Log.d(self.tag, 'send stream %s ::' % entry.fname, str(post_data)[:50], '...')
-        self.stream_schd.put({'url': self.url + footer, 'post_data': post_data})
+        Log.d(self.tag, 'send stream %s ::' % entry.file_name.split('\\')[-1], str(post_data)[:50]+'...')
+        self.ref_scheduler.put({'url': self.url + footer, 'post_data': post_data})
 
 
 class CasEntryStreamer(Singleton):
     def __init__(self):
         import queue
         self.observer = None
-        self.stream_schd = None
+        self.scheduler = None
         self.is_streaming = False
         self.tag = 'CasEntryStreamer'
         self.schd_queue = queue.Queue()
 
     def setup_streamer(self, local_dirpath, url, flags):
         self.observer = Observer()
-        self.stream_schd = StreamScheduler(self.schd_queue)
+        self.scheduler = StreamScheduler(self.schd_queue)
 
-        event_handler = MyEventHandler(self.observer, self.stream_schd, local_dirpath, url, flags)
+        event_handler = MyEventHandler(self.observer, self.scheduler, local_dirpath, url, flags)
         self.observer.schedule(event_handler, local_dirpath, recursive=True)
 
     def streaming_on(self):
@@ -97,22 +97,22 @@ class CasEntryStreamer(Singleton):
             return
 
         self.observer.start()
-        self.stream_schd.start_thread()
+        self.scheduler.start_thread()
 
         self.is_streaming = True
 
     def streaming_off(self):
         self.observer.stop()
         self.observer = None
-        self.stream_schd.stop_thread()
-        self.stream_schd = None
+        self.scheduler.stop_thread()
+        self.scheduler = None
         self.is_streaming = False
         if self.schd_queue.qsize() > 0:
             Log.e(self.tag, 'queue is not empty.')
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.streaming_off()
-        if self.stream_schd.is_on:
-            self.stream_schd.stop_thread()
+        if self.scheduler.is_on:
+            self.scheduler.stop_thread()
 
 
