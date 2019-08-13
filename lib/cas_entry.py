@@ -1,7 +1,7 @@
 import datetime
 import os
 
-from lib.debugmodule import Log
+from .debugmodule import Log
 
 
 class CasEntry:
@@ -144,7 +144,7 @@ class CasEntry:
         'uvi': 'uvi',
     }
 
-    def __init__(self, fname: str, debug=False):
+    def __init__(self, file_name: str, debug=False):
         """
         1. ISD 파일 읽기
         2. mapping
@@ -154,25 +154,25 @@ class CasEntry:
         6. 측정 시간 객체 생성
         7. 기타 정보 작성 및 수정
 
-        :param fname: ISD 파일의 절대경로, :type: str
+        :param file_name: ISD 파일의 절대경로, :type: str
         :param debug: ISD parsing debug mode, :type: bool
         """
         import sys
         # 0. initialize vars
-        self.fname = fname
+        self.file_name = file_name
         self.debug = debug
         try:
             if sys.platform == 'win32':
-                self.tag = 'CasEntry(%s)' % fname.split('\\')[1]
+                self.tag = 'CasEntry(%s)' % file_name.split('\\')[-1]
             else:
-                self.tag = 'CasEntry(%s)' % fname.split('/')[-1]
-        except:
+                self.tag = 'CasEntry(%s)' % file_name.split('/')[-1]
+        except Exception as e:
             self.valid = False
             return
 
         # 1. ISD 파일 읽기
         try:
-            isdfile = open(fname, 'rt', encoding='utf-8', errors='ignore')
+            isdfile = open(file_name, 'rt', encoding='utf-8', errors='ignore')
         except (FileNotFoundError, PermissionError) as e:
             if self.debug:
                 Log.e(self.tag + '.__init__()', 'file read error: ', e.__class__.__name__)
@@ -237,21 +237,21 @@ class CasEntry:
             else:
                 # try:
                 if line.find('=') != -1:  # if there is '=' in a single line
-                    strKey, strValue = line.split('=')
-                    key = strKey.strip()
-                    strValue = strValue.strip()
-                    endidx = strKey.find('[')
+                    str_key, str_value = line.split('=')
+                    key = str_key.strip()
+                    str_value = str_value.strip()
+                    endidx = str_key.find('[')
                     if endidx != -1:
                         key = key[:endidx].strip()
                     try:  # trying to make value float
-                        value = float(strValue)
+                        value = float(str_value)
                     except ValueError:  # if error, let it be string
-                        value = strValue
+                        value = str_value
 
                 elif line.find('\t') != -1:  # if there is 'tab' in a single line
-                    strKey, strValue = line.split('\t')
-                    key = float(strKey.strip())
-                    value = float(strValue.strip())
+                    str_key, str_value = line.split('\t')
+                    key = float(str_key.strip())
+                    value = float(str_value.strip())
                 else:    # if there is neither '=' nor 'tab'
                     line = file.readline()  # continue to read next
                     continue
@@ -325,14 +325,21 @@ class CasEntry:
 
     def set_additional_data(self):
         import sys
-        self._general_information['file_abs_path'] = self.fname
-        if sys.platform == 'win32':
-            self._general_information['file_name'] = self.fname.split('\\')[1]
-        else:
-            self._general_information['file_name'] = self.fname.split('/')[-1]
+        self._general_information['file_abs_path'] = self.file_name
 
-        self._measurement_conditions['CCDTemperature'] = float(self._measurement_conditions['CCDTemperature'].split()[0])
-        self._measurement_conditions['DCCCDTemperature'] = float(self._measurement_conditions['DCCCDTemperature'].split()[0])
+        # Log.e(self.tag + '.set_additional_data()', 'sys.platform = ', sys.platform)
+        # Log.e(self.tag + '.set_additional_data()', 'file_abs_path = ', self.fname)
+
+        if sys.platform == 'win32':
+            self._general_information['file_name'] = self.file_name.split('\\')[-1]
+        else:
+            self._general_information['file_name'] = self.file_name.split('/')[-1]
+
+        ccd_temp = float(self._measurement_conditions['CCDTemperature'].split()[0])
+        dcccd_temp = float(self._measurement_conditions['DCCCDTemperature'].split()[0])
+
+        self._measurement_conditions['CCDTemperature'] = ccd_temp
+        self._measurement_conditions['DCCCDTemperature'] = dcccd_temp
 
     def get_datetime(self, tostr=False):
         """
@@ -371,81 +378,81 @@ class CasEntry:
         #     for key in keyset:
         #         strkey_ird[str(key).replace('.', '_')] = self._sp_ird[key]
 
-        d = {}
+        category_data = {}
         if category == 'measurement_conditions':
-            d = self._measurement_conditions
+            category_data = self._measurement_conditions
         elif category == 'results':
-            d = self._results
+            category_data = self._results
         elif category == 'general_information':
-            d = self._general_information
+            category_data = self._general_information
         elif category == 'sp_ird':
-            d = self._sp_ird
+            category_data = self._sp_ird
         elif category == 'uv':
-            d = self._uv
+            category_data = self._uv
 
         elif category == 'all':
-            d = {'datetime': self.get_datetime(True),
-                 'data': {
-                    'measurement_conditions': self._measurement_conditions,
-                    'results': self._results,
-                    'general_information': self._general_information,
-                    'sp_ird': self._strkey_ird if str_key_type else self._sp_ird,
-                    'uv': self._uv
-                    }
-                 }
+            category_data = {'datetime': self.get_datetime(True),
+                             'data': {
+                                'measurement_conditions': self._measurement_conditions,
+                                'results': self._results,
+                                'general_information': self._general_information,
+                                'sp_ird': self._strkey_ird if str_key_type else self._sp_ird,
+                                'uv': self._uv
+                                }
+                             }
 
         elif category == 'basic':
-            d = {'datetime': self.get_datetime(True),
-                 'data': {
-                    'measurement_conditions': self._measurement_conditions,
-                    'results': self._results,
-                    'general_information': self._general_information,
-                    'uv': self._uv
-                    }
-                 }
+            category_data = {'datetime': self.get_datetime(True),
+                             'data': {
+                                'measurement_conditions': self._measurement_conditions,
+                                'results': self._results,
+                                'general_information': self._general_information,
+                                'uv': self._uv
+                                }
+                             }
 
         elif category == 'ird':
-            d = {
+            category_data = {
                 'datetime': self.get_datetime(True),
                 'sp_ird': self._strkey_ird if str_key_type else self._sp_ird,
             }
 
         elif category == 'simple':
-            d = {'datetime': self.get_datetime(True)}
+            category_data = {'datetime': self.get_datetime(True)}
 
             for k in self._general_information.keys():
                 try:
                     new_key = self.simple_keymap[k]
-                    d[new_key] = self._general_information[k]
+                    category_data[new_key] = self._general_information[k]
                 except KeyError:
                     continue
 
             for k in self._measurement_conditions.keys():
                 try:
                     new_key = self.simple_keymap[k]
-                    d[new_key] = self._measurement_conditions[k]
+                    category_data[new_key] = self._measurement_conditions[k]
                 except KeyError:
                     continue
 
             for k in self._results.keys():
                 try:
                     new_key = self.simple_keymap[k]
-                    d[new_key] = self._results[k]
+                    category_data[new_key] = self._results[k]
                 except KeyError:
                     continue
 
             for k in self._uv.keys():
                 try:
                     new_key = self.simple_keymap[k]
-                    d[new_key] = self._uv[k]
+                    category_data[new_key] = self._uv[k]
                 except KeyError:
                     continue
 
         if to_json:
             import json
-            return json.dumps(d, indent=2)
+            return json.dumps(category_data, indent=2)
         else:
-            return d
+            return category_data
 
     def get_attrib(self, item=None):
         """
@@ -512,15 +519,15 @@ class CasEntry:
                     continue
 
                 if weight_func == 'ery':
-                    from lib.ref_func import erythemal_action_spectrum as eryf
+                    from .ref_func import erythemal_action_spectrum as eryf
                     weightl = eryf(wll)
                     weightr = eryf(wlr)
                 elif weight_func == 'vitd':
-                    from lib.ref_func import vitd_weight_func_interpolated as vitdf
+                    from .ref_func import vitd_weight_func_interpolated as vitdf
                     weightl = vitdf(wll)
                     weightr = vitdf(wlr)
                 elif weight_func == 'actinic_uv':
-                    from lib.ref_func import actinic_uv_weight_func as actuvf
+                    from .ref_func import actinic_uv_weight_func as actuvf
                     weightl = actuvf(wll)
                     weightr = actuvf(wlr)
                 else:
