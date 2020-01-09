@@ -16,7 +16,7 @@ class MyEventHandler(FileSystemEventHandler):
         self.flags = flags
 
         self.tag = 'MyEventHandler'
-        self.wait = 1
+        self.wait = 0.5
         self.retry = 10
 
     def on_created(self, event):
